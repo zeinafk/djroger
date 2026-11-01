@@ -427,6 +427,7 @@ function connectTwitch(channel, botUser = '', botToken = '') {
     dom.twitchStatus.className = 'status-pill connected';
     const hasVoice = (state.botUsername && state.botOAuth) ? ' (Com Respostas 💬)' : '';
     dom.twitchStatus.innerHTML = `<span class="dot"></span> Conectado #${channelName}${hasVoice}`;
+    alert(`✅ DJ Roger conectado com sucesso ao chat da Twitch (#${channelName})!\n\nAgora você pode pedir músicas no chat com !sr link`);
 
     if (dom.cfgFeedback) {
       dom.cfgFeedback.style.display = 'block';
