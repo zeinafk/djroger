@@ -5,7 +5,7 @@ const syncBus = window.BroadcastChannel ? new BroadcastChannel('bitchord_bus') :
 
 // Estado
 const state = {
-  twitchChannel: localStorage.getItem('bitchord_twitch_channel') || '',
+  twitchChannel: localStorage.getItem('bitchord_twitch_channel') || 'zeinweb3',
   currentTrack: null,
   queue: JSON.parse(localStorage.getItem('bitchord_queue') || '[]'),
   isPlaying: false,
