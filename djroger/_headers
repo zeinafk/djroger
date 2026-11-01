@@ -1,0 +1,4 @@
+/*
+  Access-Control-Allow-Origin: *
+  X-Frame-Options: SAMEORIGIN
+  Cache-Control: public, max-age=3600
