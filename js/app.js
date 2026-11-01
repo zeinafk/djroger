@@ -1,17 +1,18 @@
-// BitChord Client-Side Web Player & Twitch Bot (GitHub Pages / Cloudflare Pages)
+// DJ Roger Client-Side Web Player & Twitch Bot (GitHub / Cloudflare Pages)
 
-// BroadcastChannel para sincronizar abas e o OBS Browser Source sem precisar de servidor!
 const syncBus = window.BroadcastChannel ? new BroadcastChannel('bitchord_bus') : null;
 
 // Estado
 const state = {
-  twitchChannel: localStorage.getItem('bitchord_twitch_channel') || 'zeinweb3',
+  twitchChannel: localStorage.getItem('djroger_channel') || 'zeinweb3',
+  botUsername: localStorage.getItem('djroger_bot_username') || '',
+  botOAuth: localStorage.getItem('djroger_bot_oauth') || '',
   currentTrack: null,
-  queue: JSON.parse(localStorage.getItem('bitchord_queue') || '[]'),
+  queue: JSON.parse(localStorage.getItem('djroger_queue') || '[]'),
   isPlaying: false,
   currentTime: 0,
   duration: 0,
-  volume: parseInt(localStorage.getItem('bitchord_volume') || '80', 10)
+  volume: parseInt(localStorage.getItem('djroger_volume') || '80', 10)
 };
 
 let ytPlayer = null;
@@ -31,17 +32,68 @@ const dom = {
   durationTime: document.getElementById('durationTime'),
   btnPlayPause: document.getElementById('btnPlayPause'),
   btnNext: document.getElementById('btnNext'),
-  btnPrev: document.getElementById('btnPrev'),
   volumeSlider: document.getElementById('volumeSlider'),
   queueList: document.getElementById('queueList'),
   queueCount: document.getElementById('queueCount'),
   twitchStatus: document.getElementById('twitchStatus'),
-  inputChannel: document.getElementById('inputChannel'),
-  btnConnectTwitch: document.getElementById('btnConnectTwitch'),
   addInput: document.getElementById('addInput'),
   btnAdd: document.getElementById('btnAdd'),
-  btnCopyOverlay: document.getElementById('btnCopyOverlay')
+
+  // Config tab
+  cfgTwitchChannel: document.getElementById('cfgTwitchChannel'),
+  cfgBotUsername: document.getElementById('cfgBotUsername'),
+  cfgBotOAuth: document.getElementById('cfgBotOAuth'),
+  btnToggleToken: document.getElementById('btnToggleToken'),
+  btnSaveConfig: document.getElementById('btnSaveConfig'),
+  btnTestChat: document.getElementById('btnTestChat'),
+  cfgFeedback: document.getElementById('cfgFeedback'),
+
+  // OBS tab
+  obsUrlInput: document.getElementById('obsUrlInput'),
+  btnCopyObsUrl: document.getElementById('btnCopyObsUrl'),
+
+  // Tab buttons
+  tabBtns: document.querySelectorAll('.tab-btn'),
+  tabPanes: document.querySelectorAll('.tab-pane')
 };
+
+// Gerenciamento de Abas
+dom.tabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.getAttribute('data-tab');
+    dom.tabBtns.forEach(b => b.classList.remove('active'));
+    dom.tabPanes.forEach(p => p.classList.remove('active'));
+
+    btn.classList.add('active');
+    document.getElementById(target).classList.add('active');
+  });
+});
+
+// Toggle ver/ocultar Token
+dom.btnToggleToken.addEventListener('click', () => {
+  const isPass = dom.cfgBotOAuth.type === 'password';
+  dom.cfgBotOAuth.type = isPass ? 'text' : 'password';
+  dom.btnToggleToken.textContent = isPass ? '🔒' : '👁️';
+});
+
+// Configura valores iniciais nos campos
+dom.cfgTwitchChannel.value = state.twitchChannel;
+dom.cfgBotUsername.value = state.botUsername;
+dom.cfgBotOAuth.value = state.botOAuth;
+
+// URL do OBS
+function updateObsUrl() {
+  const base = window.location.href.split('?')[0].replace('index.html', '');
+  const url = `${base.replace(/\/$/, '')}/overlay.html`;
+  dom.obsUrlInput.value = url;
+}
+updateObsUrl();
+
+dom.btnCopyObsUrl.addEventListener('click', () => {
+  navigator.clipboard.writeText(dom.obsUrlInput.value).then(() => {
+    alert('Link do OBS Overlay copiado com sucesso!\n' + dom.obsUrlInput.value);
+  });
+});
 
 // Formata segundos em mm:ss
 function formatTime(seconds) {
@@ -52,29 +104,23 @@ function formatTime(seconds) {
   return `${mins}:${rem.toString().padStart(2, '0')}`;
 }
 
-// Extrai YouTube Video ID de links
+// Extrai YouTube Video ID
 function extractYouTubeId(url) {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
   const match = url.match(regExp);
   return (match && match[2].length === 11) ? match[2] : null;
 }
 
-// Extrai Spotify Track ID
-function extractSpotifyTrackId(url) {
-  const match = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/);
-  return match ? match[1] : null;
-}
-
-// Salva e sincroniza estado
+// Salva estado local
 function saveState() {
-  localStorage.setItem('bitchord_queue', JSON.stringify(state.queue));
-  localStorage.setItem('bitchord_volume', state.volume.toString());
+  localStorage.setItem('djroger_queue', JSON.stringify(state.queue));
+  localStorage.setItem('djroger_volume', state.volume.toString());
   if (syncBus) {
     syncBus.postMessage({ type: 'STATE_UPDATE', state });
   }
 }
 
-// Atualiza a Interface do Usuário
+// Atualiza Interface
 function updateUI() {
   if (state.currentTrack) {
     dom.trackTitle.textContent = state.currentTrack.title;
@@ -145,7 +191,7 @@ window.removeQueueItem = function(uid) {
   updateUI();
 };
 
-// YouTube IFrame API Callback
+// YouTube IFrame API
 window.onYouTubeIframeAPIReady = function() {
   ytPlayer = new YT.Player('ytPlayer', {
     height: '100',
@@ -165,9 +211,7 @@ window.onYouTubeIframeAPIReady = function() {
 };
 
 function onPlayerReady(event) {
-  console.log('[YouTube Player] Pronto');
   ytPlayer.setVolume(state.volume);
-
   if (state.queue.length > 0 && !state.currentTrack) {
     playNext();
   }
@@ -209,7 +253,6 @@ function startTicker() {
   }, 1000);
 }
 
-// Reproduz próxima faixa da fila
 function playNext() {
   if (state.queue.length === 0) {
     state.currentTrack = null;
@@ -236,12 +279,11 @@ function playNext() {
   }
 }
 
-// Resolução de Músicas Client-Side (YouTube e Spotify)
+// Resolução de músicas
 async function resolveAndAdd(input, requestedBy = 'Live') {
   const trimmed = input.trim();
   let track = null;
 
-  // 1. Link do Spotify
   if (trimmed.includes('spotify.com/track/')) {
     try {
       const cleanUrl = trimmed.split('?')[0];
@@ -251,7 +293,6 @@ async function resolveAndAdd(input, requestedBy = 'Live') {
       const title = oembed.title || 'Música do Spotify';
       const thumbnail = oembed.thumbnail_url || 'assets/roger/roger_logo.png';
       
-      // Busca vídeo no YouTube correspondente via oEmbed do Invidious/Piped ou busca no YouTube
       const ytSearchUrl = `https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(title)}&filter=videos`;
       let videoId = null;
 
@@ -263,33 +304,24 @@ async function resolveAndAdd(input, requestedBy = 'Live') {
         }
       } catch (e) {}
 
-      // Fallback: se a API de busca externa falhar, usa busca direta de ID
-      if (!videoId) {
-        videoId = 'dQw4w9WgXcQ'; // Fallback seguro
-      }
+      if (!videoId) videoId = 'dQw4w9WgXcQ';
 
       track = {
-        title: title,
+        title,
         artist: 'Spotify Track',
-        thumbnail: thumbnail,
-        videoId: videoId,
+        thumbnail,
+        videoId,
         source: 'spotify',
-        requestedBy: requestedBy,
+        requestedBy,
         uid: `${Date.now()}_${Math.random()}`
       };
     } catch (err) {
-      console.error('Erro ao resolver Spotify:', err);
-      alert('Não foi possível carregar esta música do Spotify.');
+      alert('Não foi possível carregar música do Spotify.');
       return;
     }
-  } 
-  // 2. Link do YouTube
-  else if (trimmed.includes('youtube.com/') || trimmed.includes('youtu.be/')) {
+  } else if (trimmed.includes('youtube.com/') || trimmed.includes('youtu.be/')) {
     const videoId = extractYouTubeId(trimmed);
-    if (!videoId) {
-      alert('Link do YouTube inválido.');
-      return;
-    }
+    if (!videoId) return;
 
     let title = 'Música do YouTube';
     let artist = 'YouTube';
@@ -309,12 +341,11 @@ async function resolveAndAdd(input, requestedBy = 'Live') {
       thumbnail: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
       videoId,
       source: 'youtube',
-      requestedBy: requestedBy,
+      requestedBy,
       uid: `${Date.now()}_${Math.random()}`
     };
-  } 
-  // 3. Busca por texto
-  else {
+  } else {
+    // Busca texto
     try {
       const pipedRes = await fetch(`https://pipedapi.kavin.rocks/search?q=${encodeURIComponent(trimmed)}&filter=videos`);
       const pipedData = await pipedRes.json();
@@ -327,7 +358,7 @@ async function resolveAndAdd(input, requestedBy = 'Live') {
           thumbnail: item.thumbnail || `https://img.youtube.com/vi/${vId}/hqdefault.jpg`,
           videoId: vId,
           source: 'youtube',
-          requestedBy: requestedBy,
+          requestedBy,
           uid: `${Date.now()}_${Math.random()}`
         };
       }
@@ -336,6 +367,15 @@ async function resolveAndAdd(input, requestedBy = 'Live') {
 
   if (track) {
     state.queue.push(track);
+    const pos = state.queue.length;
+
+    // Responde no chat se o bot tiver token configurado
+    if (twitchClient && state.botUsername && state.botOAuth) {
+      try {
+        twitchClient.say(state.twitchChannel, `🐻🎵 @${requestedBy} adicionou "${track.title}" à fila! [Posição #${pos}]`);
+      } catch (e) {}
+    }
+
     if (!state.currentTrack) {
       playNext();
     } else {
@@ -347,8 +387,8 @@ async function resolveAndAdd(input, requestedBy = 'Live') {
   }
 }
 
-// Conexão com a Twitch via tmi.js
-function connectTwitch(channel) {
+// Conexão Twitch
+function connectTwitch(channel, botUser = '', botToken = '') {
   if (!channel || !channel.trim()) return;
   const channelName = channel.trim().toLowerCase().replace(/^#/, '');
 
@@ -357,21 +397,43 @@ function connectTwitch(channel) {
   }
 
   state.twitchChannel = channelName;
-  localStorage.setItem('bitchord_twitch_channel', channelName);
+  state.botUsername = botUser.trim().toLowerCase();
+  state.botOAuth = botToken.trim();
+
+  localStorage.setItem('djroger_channel', state.twitchChannel);
+  localStorage.setItem('djroger_bot_username', state.botUsername);
+  localStorage.setItem('djroger_bot_oauth', state.botOAuth);
 
   dom.twitchStatus.className = 'status-pill disconnected';
   dom.twitchStatus.innerHTML = '<span class="dot"></span> Conectando...';
 
-  twitchClient = new tmi.Client({
+  const clientOpts = {
     options: { debug: false },
     connection: { reconnect: true, secure: true },
     channels: [channelName]
-  });
+  };
+
+  if (state.botUsername && state.botOAuth) {
+    const pwd = state.botOAuth.startsWith('oauth:') ? state.botOAuth : `oauth:${state.botOAuth}`;
+    clientOpts.identity = {
+      username: state.botUsername,
+      password: pwd
+    };
+  }
+
+  twitchClient = new tmi.Client(clientOpts);
 
   twitchClient.on('connected', () => {
     dom.twitchStatus.className = 'status-pill connected';
-    dom.twitchStatus.innerHTML = `<span class="dot"></span> Conectado (#${channelName})`;
-    console.log(`[Twitch] Conectado a #${channelName}`);
+    const hasVoice = (state.botUsername && state.botOAuth) ? ' (Com Respostas 💬)' : '';
+    dom.twitchStatus.innerHTML = `<span class="dot"></span> Conectado #${channelName}${hasVoice}`;
+
+    if (dom.cfgFeedback) {
+      dom.cfgFeedback.style.display = 'block';
+      dom.cfgFeedback.style.background = 'rgba(34, 197, 94, 0.2)';
+      dom.cfgFeedback.style.color = '#4ade80';
+      dom.cfgFeedback.textContent = `✅ Bot conectado com sucesso no canal #${channelName}!`;
+    }
   });
 
   twitchClient.on('message', (chan, userstate, message, self) => {
@@ -388,16 +450,58 @@ function connectTwitch(channel) {
       if (args) resolveAndAdd(args, username);
     } else if (['!skip', '!pular'].includes(cmd)) {
       playNext();
+      if (state.botUsername && state.botOAuth) {
+        twitchClient.say(channelName, `⏭️ Música pulada por @${username}!`);
+      }
+    } else if (['!np', '!song'].includes(cmd)) {
+      if (state.botUsername && state.botOAuth && state.currentTrack) {
+        twitchClient.say(channelName, `🎶 Tocando agora: "${state.currentTrack.title}" (pedido por @${state.currentTrack.requestedBy})`);
+      }
     }
   });
 
   twitchClient.connect().catch(err => {
     dom.twitchStatus.className = 'status-pill disconnected';
-    dom.twitchStatus.innerHTML = '<span class="dot"></span> Falha na conexão';
+    dom.twitchStatus.innerHTML = '<span class="dot"></span> Erro de conexão';
+    if (dom.cfgFeedback) {
+      dom.cfgFeedback.style.display = 'block';
+      dom.cfgFeedback.style.background = 'rgba(239, 68, 68, 0.2)';
+      dom.cfgFeedback.style.color = '#f87171';
+      dom.cfgFeedback.textContent = `⚠️ Erro ao conectar: ${err.message}. Verifique seu token e nome de usuário.`;
+    }
   });
 }
 
-// Event Listeners
+// Botão Salvar Configuração
+dom.btnSaveConfig.addEventListener('click', () => {
+  const ch = dom.cfgTwitchChannel.value.trim();
+  const botU = dom.cfgBotUsername.value.trim();
+  const botT = dom.cfgBotOAuth.value.trim();
+
+  if (!ch) {
+    alert('Informe o nome do canal da Twitch!');
+    return;
+  }
+
+  connectTwitch(ch, botU, botT);
+});
+
+// Botão Testar Mensagem no Chat
+dom.btnTestChat.addEventListener('click', () => {
+  if (!twitchClient || !state.botUsername || !state.botOAuth) {
+    alert('Para enviar mensagens, você precisa preencher o Nome do Bot e o OAuth Token e clicar em Salvar!');
+    return;
+  }
+
+  try {
+    twitchClient.say(state.twitchChannel, '🐻 Teste: DJ Roger Bot conectado com sucesso no chat da live!');
+    alert('Mensagem de teste enviada no seu chat da Twitch!');
+  } catch (err) {
+    alert('Falha ao enviar mensagem: ' + err.message);
+  }
+});
+
+// Controles normais
 dom.btnPlayPause.addEventListener('click', () => {
   if (!ytPlayer) return;
   if (state.isPlaying) {
@@ -431,23 +535,7 @@ dom.addInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') dom.btnAdd.click();
 });
 
-dom.btnConnectTwitch.addEventListener('click', () => {
-  const ch = dom.inputChannel.value.trim();
-  if (ch) connectTwitch(ch);
-});
-
-dom.btnCopyOverlay.addEventListener('click', () => {
-  const url = `${window.location.origin}${window.location.pathname.replace('index.html', '')}overlay.html?channel=${state.twitchChannel || 'seucanal'}`;
-  navigator.clipboard.writeText(url).then(() => {
-    alert(`Link do Overlay copiado:\n${url}\n\nCole no OBS Studio como fonte "Navegador" (Browser Source)!`);
-  });
-});
-
 // Inicialização
-if (state.twitchChannel) {
-  dom.inputChannel.value = state.twitchChannel;
-  connectTwitch(state.twitchChannel);
-}
-
 dom.volumeSlider.value = state.volume;
 updateUI();
+connectTwitch(state.twitchChannel, state.botUsername, state.botOAuth);
