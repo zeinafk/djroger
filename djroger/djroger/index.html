@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DJ Roger • WebRadio & Twitch Song Request</title>
+  <link rel="icon" type="image/png" href="assets/roger/roger_logo.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header com Logo e Abas -->
+    <header class="header glass-panel">
+      <div class="brand-box">
+        <img src="assets/roger/roger_logo.png" alt="DJ Roger" class="brand-logo" />
+        <div>
+          <h1 class="brand-title">DJ ROGER</h1>
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+            <span class="brand-tag">Online Edition</span>
+            <span class="brand-tag" style="background: rgba(255, 64, 129, 0.2); color: #ff80bf;">Twitch Live</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Abas de Navegação -->
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-tab="tabPlayer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+          Player & Fila
+        </button>
+        <button class="tab-btn" data-tab="tabConfig">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+          Configurar Bot
+        </button>
+        <button class="tab-btn" data-tab="tabObs">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4v2h8v-2h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H4V4h16v12z"/></svg>
+          OBS Overlay
+        </button>
+      </nav>
+
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <a href="bot.html" class="btn" style="background: rgba(145, 70, 255, 0.25); border: 1px solid rgba(145, 70, 255, 0.45); color: #e0ccff;" title="Página exclusiva do Bot da Twitch">
+          🤖 Conectar Bot Twitch
+        </a>
+        <div id="twitchStatus" class="status-pill disconnected">
+          <span class="dot"></span> Não conectado
+        </div>
+      </div>
+    </header>
+
+    <!-- ABA 1: PLAYER & FILA -->
+    <main id="tabPlayer" class="tab-pane active">
+      <div class="main-grid">
+
+        <!-- Coluna Esquerda: Player -->
+        <div style="display: flex; flex-direction: column; gap: 24px;">
+          <div class="glass-panel player-card">
+            <div class="ambient-light"></div>
+
+            <div class="track-hero">
+              <div class="cover-wrapper">
+                <img id="coverArt" src="assets/roger/roger_logo.png" alt="Capa" class="cover-art" />
+                <div id="sourceBadge" class="source-badge" style="display: none;"></div>
+              </div>
+
+              <div class="track-meta">
+                <div id="trackTitle" class="track-title">Carregando player...</div>
+                <div id="trackArtist" class="track-artist">Aguardando músicas do chat...</div>
+                <div id="requestedBy" class="requested-tag" style="display: none;"></div>
+              </div>
+            </div>
+
+            <!-- Progresso -->
+            <div class="progress-container">
+              <div class="progress-bar-wrapper" id="progressWrapper">
+                <div class="progress-fill" id="progressBar"></div>
+              </div>
+              <div class="time-row">
+                <span id="currentTime">0:00</span>
+                <span id="durationTime">0:00</span>
+              </div>
+            </div>
+
+            <!-- Controles -->
+            <div class="controls-row">
+              <div class="main-controls">
+                <button id="btnPlayPause" class="btn-play-pause" title="Play/Pause">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                </button>
+                <button id="btnNext" class="btn btn-icon" title="Pular música">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                </button>
+              </div>
+
+              <div class="volume-container">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: var(--text-muted);"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                <input type="range" id="volumeSlider" class="volume-slider" min="0" max="100" value="80" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Adicionar Manual -->
+          <div class="glass-panel" style="padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+            <div style="font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent-pink);"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+              Adicionar Música Manualmente
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <input type="text" id="addInput" class="input-text" placeholder="Cole link do YouTube ou Spotify..." style="flex: 1;" />
+              <button id="btnAdd" class="btn btn-primary">Adicionar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna Direita: Fila -->
+        <div class="glass-panel queue-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font-weight: 700; font-size: 1.05rem;">
+              Fila de Músicas <span id="queueCount" style="color: var(--accent-pink);">(0)</span>
+            </div>
+            <img src="assets/roger/12_urso_relax.png" alt="Roger" style="width: 38px; height: 38px; object-fit: contain;" />
+          </div>
+          <div class="queue-list" id="queueList"></div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ABA 2: CONFIGURAR BOT DA TWITCH -->
+    <main id="tabConfig" class="tab-pane">
+      <div class="glass-panel config-card">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <img src="assets/roger/11_urso_gamer.png" alt="Roger Gamer" style="width: 52px; height: 52px; object-fit: contain;" />
+          <div>
+            <h2 style="font-size: 1.3rem; font-weight: 700; color: #fff;">Configurações do Bot da Twitch</h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">Configure seu canal e o token para o bot falar no chat</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <span>Canal da Twitch onde a live acontece:</span>
+            <span style="color: var(--accent-pink);">*Obrigatório</span>
+          </label>
+          <input type="text" id="cfgTwitchChannel" class="input-text" placeholder="ex: zeinweb3" value="zeinweb3" />
+          <span class="form-hint">O bot vai escutar os comandos <code>!sr</code> neste canal.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <span>Nome da conta do Bot:</span>
+            <span style="color: var(--text-muted);">(Para responder no chat)</span>
+          </label>
+          <input type="text" id="cfgBotUsername" class="input-text" placeholder="ex: zeinweb3 ou roger_bot" />
+          <span class="form-hint">O nome de usuário da Twitch que vai enviar mensagens de volta no chat.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <span>OAuth Token do Bot:</span>
+            <a href="https://twitchtokengenerator.com/" target="_blank" style="color: #c7a4ff; font-size: 0.8rem; text-decoration: underline;">Gerar Token Grátis</a>
+          </label>
+          <div style="display: flex; gap: 8px;">
+            <input type="password" id="cfgBotOAuth" class="input-text" placeholder="oauth:xxxxxxxxxxxxxx" style="flex: 1;" />
+            <button type="button" id="btnToggleToken" class="btn" style="padding: 0 14px;">👁️</button>
+          </div>
+          <span class="form-hint">Cole aqui o token gerado com a permissão <code>chat:read</code> e <code>chat:write</code>.</span>
+        </div>
+
+        <div style="display: flex; gap: 14px; margin-top: 8px;">
+          <button id="btnSaveConfig" class="btn btn-primary" style="flex: 1; justify-content: center; padding: 14px;">
+            💾 Salvar e Conectar Bot
+          </button>
+          <button id="btnTestChat" class="btn" style="background: rgba(145, 70, 255, 0.25); border: 1px solid rgba(145, 70, 255, 0.5);">
+            💬 Testar Mensagem no Chat
+          </button>
+        </div>
+
+        <div id="cfgFeedback" style="padding: 12px; border-radius: 10px; display: none; font-size: 0.85rem;"></div>
+      </div>
+    </main>
+
+    <!-- ABA 3: OBS OVERLAY -->
+    <main id="tabObs" class="tab-pane">
+      <div class="glass-panel config-card">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <img src="assets/roger/10_urso_gg.png" alt="Roger GG" style="width: 52px; height: 52px; object-fit: contain;" />
+          <div>
+            <h2 style="font-size: 1.3rem; font-weight: 700; color: #fff;">Overlay para OBS Studio</h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">Widget transparente com o Roger para colocar na tela da live</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Link do Overlay para o OBS:</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="obsUrlInput" class="input-text" readonly style="flex: 1;" />
+            <button id="btnCopyObsUrl" class="btn btn-primary">Copiar Link</button>
+          </div>
+        </div>
+
+        <div class="glass-panel" style="padding: 18px; background: rgba(0,0,0,0.3); font-size: 0.85rem; line-height: 1.6;">
+          <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; color: var(--accent-pink);">Passo a Passo no OBS:</h3>
+          <ol style="margin-left: 20px;">
+            <li>No OBS Studio, clique no <strong>+</strong> na aba de Fontes.</li>
+            <li>Selecione <strong>Navegador (Browser)</strong>.</li>
+            <li>Cole a URL acima no campo <strong>URL</strong>.</li>
+            <li>Coloque <strong>Largura: 550</strong> e <strong>Altura: 180</strong>.</li>
+            <li>Marque <em>"Desativar quando não estiver visível"</em> e clique em OK!</li>
+          </ol>
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+  <!-- YouTube IFrame Player Oculto -->
+  <div id="ytPlayerContainer">
+    <div id="ytPlayer"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tmi.js@1.8.5/index.min.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
